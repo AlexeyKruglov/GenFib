@@ -1,0 +1,4 @@
+GenFib
+======
+
+Generalized Fibonacci sequence
