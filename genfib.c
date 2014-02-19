@@ -31,7 +31,7 @@ void init_weights(size_t N, double *w) {
   size_t i;
 
   for(i = 1; i < N; i++) 
-    w[i] = 1./i;
+    w[i] = 1.;
   w[0] = 0;
 }
 
@@ -45,7 +45,7 @@ void new_slope(double *sl, double *v, double new_sl) {
     v[i] = v[i] * exp(-new_sl*i);
 }
 
-void fix_slope(double *sl, double *v, int nr, int nl) {
+void fix_slope(double *sl, double *v, size_t nl, size_t nr) {
   double a = (log(v[nr]) - log(v[nl]));
   double b = nr-nl;
   printf("[%i %i %f %f %f]\n", nr-nl, nr, a , b, a / b);
@@ -56,7 +56,7 @@ int main() {
   size_t i,valid;
   double b0;
 
-  init_conv(128);
+  init_conv(64*1024);
 
   init_weights(N, inb);  // b = w
   memset(ina, 0, sizeof(ina[0]) * 2 * N); ina[0] = 1;  // a = delta
@@ -70,6 +70,9 @@ int main() {
     conv();  // a=a*(b+delta)
     inb[0] = b0;
 
+    //printf("[valid=%i]\n", valid);
+    //print_2vec(ina, 0, inb, 0);
+
     autoconv();  // b=b*b
     valid *= 2;
 
@@ -79,12 +82,18 @@ int main() {
 
     printf("valid=%i\n", valid);
     printf("slope=%f,%f\n", sla, slb);
-    print_2vec(ina, sla, inb, slb);
-    print_2vec(ina, 0, inb, 0);
+    //print_2vec(ina, 0, inb, 0);
+    printf("N=%i\nlog_2(a_{N-1}) = %.18f\n", valid, (log(ina[valid-1])+sla*(valid-1))/log(2.));
 
     // if(valid < 2 * N) memset(&ina[valid], 0, sizeof(ina[0]) * (2 * N - valid));
     // if(valid < 2 * N) memset(&inb[valid], 0, sizeof(inb[0]) * (2 * N - valid));
   }
 
-  deinit_conv(128);
+    //print_2vec(ina, sla, inb, slb);
+    //print_2vec(ina, 0, inb, 0);
+  printf("N=%i\nlog_2(a_{N-1}) = %.18f\n", N, (log(ina[N-1])+sla*(N-1))/log(2.));
+
+  deinit_conv();
+
+  return 0;
 }
