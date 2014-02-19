@@ -10,11 +10,11 @@
 
 
 
-void print_vec(double *v) {
+void print_vec(double *v, double sl) {
   size_t i;
 
   for(i = 0; i < 2 * N; i++)
-    printf("  %3d  %12f\n", i, v[i]);
+    printf("  %3d  %12f  %12f\n", i, v[i] * exp(sl * i), v[i]);
   printf("\n");
 }
 
@@ -53,10 +53,13 @@ void fix_slope(double *sl, double *v, size_t nl, size_t nr) {
 }
 
 int main() {
-  size_t i,valid;
+  size_t i, valid;
   double b0;
 
-  init_conv(64*1024);
+  double *savea;
+
+  init_conv(128*1024);
+  savea = fftw_malloc(sizeof(double) * 2 * N);
 
   init_weights(N, inb);  // b = w
   memset(ina, 0, sizeof(ina[0]) * 2 * N); ina[0] = 1;  // a = delta
@@ -66,18 +69,31 @@ int main() {
     // inv: a = sum_{k=0}^{valid-1} w^{*k}
     // inv: forall_{i=1}^{valid-1} a[i]=sum_{k=0}^i w[k] a[i-k]
 
-    b0 = inb[0]; inb[0] = b0 + 1;
-    conv();  // a=a*(b+delta)
-    inb[0] = b0;
+    // a=a*b+a
+    memcpy(savea, ina, sizeof(savea[0]) * N); // We only need a[i] for i<N
+    conv();  // a=a*b
+    for(i = 0; i < N; i++)  // a=a+a_old
+      ina[i] += savea[i];
 
     //printf("[valid=%i]\n", valid);
     //print_2vec(ina, 0, inb, 0);
 
-    autoconv();  // b=b*b
+    //printf("[valid=%i] before\n", valid);
+    //print_vec(inb, slb);
+
+    // b=b*b
+    autoconv();
+
+    //printf("[valid=%i] after\n", valid);
+    //print_vec(inb, slb);
+
     valid *= 2;
 
     if(valid > 2)
       fix_slope(&sla, ina, 1, valid-1);
+    else {
+      new_slope(&sla, ina, log(2));
+    }
     new_slope(&slb, inb, sla-slb); slb=sla;
 
     printf("valid=%i\n", valid);
@@ -94,6 +110,8 @@ int main() {
   printf("N=%i\nlog_2(a_{N-1}) = %.18f\n", N, (log(ina[N-1])+sla*(N-1))/log(2.));
 
   deinit_conv();
+  fftw_free(savea);
+
 
   return 0;
 }
