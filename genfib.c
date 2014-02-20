@@ -31,8 +31,50 @@ void init_weights(size_t N, double *w) {
   size_t i;
 
   for(i = 1; i < N; i++) 
-    w[i] = 1.;
+    w[i] = (double)i * i;
+    //w[i] = pow((double)i/N, i/10.);
   w[0] = 0;
+}
+
+double f_df(double x, double *df, double *w) {
+  size_t i;
+  double v, dv;
+
+  v = dv = 0;
+  for(i = N-1; i >= 1; i--) {
+    //printf("[%i:%f; v=%f; x=%f]\n", i,w[i], v,x);
+    v = x*v + w[i];
+    dv = x*dv + i*w[i];
+  }
+  //exit(1);
+
+  if(df != NULL) *df = dv;
+  return x*v - 1;
+}
+
+double asympt_slope(double *w) {
+  double cx, cf, cdf;
+  double x0;
+
+  if(w[N-1] != 0) x0 = pow(w[1]/w[N-1], 1. / (N-1.));
+  else x0 = 1;
+
+  cx=x0; cf = f_df(cx, &cdf, w);
+  printf("f(%f)=%f\n", cx, cf);
+
+  while(cf < 0) {
+    cx += 0.25 * x0;
+    cf = f_df(cx, &cdf, w);
+    printf("f(%f)=%f\n", cx, cf);
+  }
+
+  while(fabs(cf) >= 1e-2 / N * cdf) {
+    cx -= cf/cdf;
+    cf = f_df(cx, &cdf, w);
+    printf("f(%f)=%f\n", cx, cf);
+  }
+
+  return -log(cx);
 }
 
 double sla=0, slb=0;
@@ -58,12 +100,16 @@ int main() {
 
   double *savea;
 
-  init_conv(128*1024);
+  init_conv(1024*1024);
   savea = fftw_malloc(sizeof(double) * 2 * N);
 
   init_weights(N, inb);  // b = w
   memset(ina, 0, sizeof(ina[0]) * 2 * N); ina[0] = 1;  // a = delta
   valid = 1;
+
+
+  new_slope(&sla, ina, asympt_slope(inb));
+  new_slope(&slb, inb, sla-slb); slb=sla;
 
   while(valid < N) {
     // inv: a = sum_{k=0}^{valid-1} w^{*k}
@@ -89,12 +135,12 @@ int main() {
 
     valid *= 2;
 
-    if(valid > 2)
+    /*if(valid > 2)
       fix_slope(&sla, ina, 1, valid-1);
     else {
       new_slope(&sla, ina, log(2));
     }
-    new_slope(&slb, inb, sla-slb); slb=sla;
+    new_slope(&slb, inb, sla-slb); slb=sla;*/
 
     printf("valid=%i\n", valid);
     printf("slope=%f,%f\n", sla, slb);
