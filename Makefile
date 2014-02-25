@@ -1,2 +1,2 @@
 genfib: genfib.c convol.c
-	gcc $^ -lfftw3 -o $@
+	gcc -O9 $^ -lfftw3 -o $@
