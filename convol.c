@@ -6,17 +6,17 @@ void init_conv(size_t _N) {
   if(N != 0) deinit_conv();
   N = _N;
 
-  ina = fftw_malloc(sizeof(double) * 2 * N);
-  inb = fftw_malloc(sizeof(double) * 2 * N);
+  a = fftw_malloc(sizeof(double) * 2 * N);
+  b = fftw_malloc(sizeof(double) * 2 * N);
   outa = fftw_malloc(sizeof(fftw_complex) * (N + 1));
   outb = fftw_malloc(sizeof(fftw_complex) * (N + 1));
 
-//  plan_fw_a = fftw_plan_dft_r2c_1d(2 * N, ina, outa, FFTW_MEASURE);
-//  plan_bw_a = fftw_plan_dft_c2r_1d(2 * N, outa, ina, FFTW_MEASURE);
-  plan_fw_a = fftw_plan_dft_r2c_1d(2 * N, ina, outa, FFTW_ESTIMATE);
-  plan_bw_a = fftw_plan_dft_c2r_1d(2 * N, outa, ina, FFTW_ESTIMATE);
-  plan_fw_b = fftw_plan_dft_r2c_1d(2 * N, inb, outb, FFTW_ESTIMATE);
-  plan_bw_b = fftw_plan_dft_c2r_1d(2 * N, outb, inb, FFTW_ESTIMATE);
+//  plan_fw_a = fftw_plan_dft_r2c_1d(2 * N, a, outa, FFTW_MEASURE);
+//  plan_bw_a = fftw_plan_dft_c2r_1d(2 * N, outa, a, FFTW_MEASURE);
+  plan_fw_a = fftw_plan_dft_r2c_1d(2 * N, a, outa, FFTW_ESTIMATE);
+  plan_bw_a = fftw_plan_dft_c2r_1d(2 * N, outa, a, FFTW_ESTIMATE);
+  plan_fw_b = fftw_plan_dft_r2c_1d(2 * N, b, outb, FFTW_ESTIMATE);
+  plan_bw_b = fftw_plan_dft_c2r_1d(2 * N, outb, b, FFTW_ESTIMATE);
 }
 
 void deinit_conv() {
@@ -25,8 +25,8 @@ void deinit_conv() {
   fftw_destroy_plan(plan_fw_b);
   fftw_destroy_plan(plan_bw_b);
 
-  fftw_free(ina);
-  fftw_free(inb);
+  fftw_free(a);
+  fftw_free(b);
   fftw_free(outa);
   fftw_free(outb);
 
@@ -36,8 +36,8 @@ void deinit_conv() {
 void conv() {  // a[n:2n-1]=b[n:2n-1]=0; a=a*b;
   size_t i;
 
-  memset(&ina[N], 0, sizeof(ina[0]) * N);
-  memset(&inb[N], 0, sizeof(inb[0]) * N);
+  memset(&a[N], 0, sizeof(a[0]) * N);
+  memset(&b[N], 0, sizeof(b[0]) * N);
 
   fftw_execute(plan_fw_a);
   fftw_execute(plan_fw_b);
@@ -56,7 +56,7 @@ void conv() {  // a[n:2n-1]=b[n:2n-1]=0; a=a*b;
 void autoconv() {  // b[n:2n-1]=0; b=b*b;
   size_t i;
 
-  memset(&inb[N], 0, sizeof(inb[0]) * N);
+  memset(&b[N], 0, sizeof(b[0]) * N);
 
   fftw_execute(plan_fw_b);
 

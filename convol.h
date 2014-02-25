@@ -5,8 +5,8 @@
 #include <fftw3.h>
 
 size_t N;
-double *ina;
-double *inb;
+double *a;
+double *b;
 fftw_complex *outa;
 fftw_complex *outb;
 fftw_plan plan_fw_a, plan_fw_b, plan_bw_a, plan_bw_b;
